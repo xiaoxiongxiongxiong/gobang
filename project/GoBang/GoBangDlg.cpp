@@ -100,6 +100,9 @@ BOOL CGoBangDlg::OnInitDialog()
     SetIcon(m_hIcon, FALSE);        // 设置小图标
 
     // TODO: 在此添加额外的初始化代码
+    m_fontSize.CreatePointFont(150, _T("华文行楷"), NULL);
+    GetDlgItem(IDC_BTN_START)->SetFont(&m_fontSize);
+    GetDlgItem(IDC_BTN_EXIT_GAME)->SetFont(&m_fontSize);
 
     return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -144,6 +147,7 @@ void CGoBangDlg::OnPaint()
     {
         CDialogEx::OnPaint();
     }
+    drawCheckerBoard(GOBANG_BOARD_GRID_MAX, GOBANG_BOARD_GRID_MAX);
 }
 
 //当用户拖动最小化窗口时系统调用此函数取得光标
@@ -151,4 +155,55 @@ void CGoBangDlg::OnPaint()
 HCURSOR CGoBangDlg::OnQueryDragIcon()
 {
     return static_cast<HCURSOR>(m_hIcon);
+}
+
+void CGoBangDlg::drawCheckerBoard(UINT uiRow, UINT uiCol)
+{
+    CDC * pDC = GetDC();
+    CFont fontSet;
+    fontSet.CreateFont(120, 0, 0, 0, 700, FALSE, FALSE, 0, ANSI_CHARSET
+                       , OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY
+                       , DEFAULT_PITCH | FF_SWISS, _T("华文行楷"));
+    pDC->SelectObject(&fontSet);
+
+    CRect rect;
+    GetClientRect(rect);
+    pDC->FillSolidRect(rect, RGB(203, 159, 128));
+    //pDC->SetTextColor(RGB(0, 0, 255));
+    //pDC->TextOutW(15, 100, _T("五"));
+    //pDC->TextOutW(15, 260, _T("子"));
+    //pDC->TextOutW(15, 420, _T("棋"));
+    //pDC->TextOutW(715, 100, _T("五"));
+    //pDC->TextOutW(715, 260, _T("子"));
+    //pDC->TextOutW(715, 420, _T("棋"));
+    int x = (rect.Width() - MAX_GRID_COUNT * uiCol) / 2 + 20;  //居中
+    int y = 40;
+    int iWidth = (uiRow - 1) * MAX_GRID_COUNT + x;
+    for (UINT i = 0; i < uiRow; i++)
+    {
+        pDC->MoveTo(x, i * MAX_GRID_COUNT + y);
+        pDC->LineTo(iWidth, i * MAX_GRID_COUNT + y);
+    }
+
+    int iHeight = (uiCol - 1) * MAX_GRID_COUNT + y;
+    for (UINT i = 0; i < uiCol; i++)
+    {
+        pDC->MoveTo(i * MAX_GRID_COUNT + x, y);
+        pDC->LineTo(i * MAX_GRID_COUNT + x, iHeight);
+    }
+    int m = x + 7 * MAX_GRID_COUNT;
+    int n = y + 7 * MAX_GRID_COUNT;
+    pDC->Ellipse(m - RADIUS, n - RADIUS, m + RADIUS, n + RADIUS);
+    m = x + 3 * MAX_GRID_COUNT;
+    n = y + 3 * MAX_GRID_COUNT;
+    pDC->Ellipse(m - RADIUS, n - RADIUS, m + RADIUS, n + RADIUS);
+    m = x + 11 * MAX_GRID_COUNT;
+    n = y + 3 * MAX_GRID_COUNT;
+    pDC->Ellipse(m - RADIUS, n - RADIUS, m + RADIUS, n + RADIUS);
+    m = x + 3 * MAX_GRID_COUNT;
+    n = y + 11 * MAX_GRID_COUNT;
+    pDC->Ellipse(m - RADIUS, n - RADIUS, m + RADIUS, n + RADIUS);
+    m = x + 11 * MAX_GRID_COUNT;
+    n = y + 11 * MAX_GRID_COUNT;
+    pDC->Ellipse(m - RADIUS, n - RADIUS, m + RADIUS, n + RADIUS);
 }
