@@ -233,7 +233,9 @@
     <None Include="res\GoBang.rc2" />
   </ItemGroup>
   <ItemGroup>
+    <Image Include="res\black.bmp" />
     <Image Include="res\GoBang.ico" />
+    <Image Include="res\white.bmp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

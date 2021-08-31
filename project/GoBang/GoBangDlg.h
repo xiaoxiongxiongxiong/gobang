@@ -5,7 +5,7 @@
 #pragma once
 #include "../../src/GoBangImpl.h"
 
-#define MAX_GRID_COUNT 40  //每格
+#define MAX_GRID_COUNT 40  //每格大小
 #define RADIUS 6  //半径
 
 // CGoBangDlg 对话框
@@ -17,7 +17,7 @@ public:
 
 // 对话框数据
 #ifdef AFX_DESIGN_TIME
-    enum { IDD = IDD_GOBANG_DIALOG };
+    enum { IDD = IDD_DLG_GOBANG };
 #endif
 
 protected:
@@ -41,4 +41,12 @@ protected:
 
 private:
     CFont m_fontSize;
+    CGoBangImpl * m_pGobang = nullptr;
+    int m_iXpos = 0;   // 左上角横坐标
+    int m_iYpos = 0;   // 左上角纵坐标
+
+public:
+    afx_msg void OnBnClickedBtnStart();
+    afx_msg void OnLButtonDown(UINT nFlags, CPoint point);
+    afx_msg void OnBnClickedBtnExitGame();
 };

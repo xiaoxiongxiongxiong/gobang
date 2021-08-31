@@ -65,5 +65,11 @@
     <Image Include="res\GoBang.ico">
       <Filter>资源文件</Filter>
     </Image>
+    <Image Include="res\black.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
+    <Image Include="res\white.bmp">
+      <Filter>资源文件</Filter>
+    </Image>
   </ItemGroup>
 </Project>

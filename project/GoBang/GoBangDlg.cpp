@@ -65,6 +65,9 @@ BEGIN_MESSAGE_MAP(CGoBangDlg, CDialogEx)
     ON_WM_SYSCOMMAND()
     ON_WM_PAINT()
     ON_WM_QUERYDRAGICON()
+    ON_BN_CLICKED(IDC_BTN_START, &CGoBangDlg::OnBnClickedBtnStart)
+    ON_WM_LBUTTONDOWN()
+    ON_BN_CLICKED(IDC_BTN_EXIT_GAME, &CGoBangDlg::OnBnClickedBtnExitGame)
 END_MESSAGE_MAP()
 
 
@@ -148,6 +151,41 @@ void CGoBangDlg::OnPaint()
         CDialogEx::OnPaint();
     }
     drawCheckerBoard(GOBANG_BOARD_GRID_MAX, GOBANG_BOARD_GRID_MAX);
+    if (nullptr == m_pGobang)
+        return;
+
+    CBitmap bmpBlack, bmpWhite;
+    CDC memdc;
+    CDC * pDC = GetDC();
+    memdc.CreateCompatibleDC(pDC);
+    bmpBlack.LoadBitmap(IDB_BMP_BLACK);
+    bmpWhite.LoadBitmap(IDB_BMP_WHITE);
+
+    gobang_board_info_t m_struInfo[15][15];
+    m_pGobang->getPiecesInfo(m_struInfo);
+
+    for (int i = 0; i < GOBANG_BOARD_GRID_MAX; i++)
+    {
+        for (int j = 0; j < GOBANG_BOARD_GRID_MAX; j++)
+        {
+            if (m_struInfo[i][j].used)
+            {
+                if (m_struInfo[i][j].type == GOBANG_PIECE_BLACK)
+                {
+                    memdc.SelectObject(&bmpBlack);
+                    pDC->BitBlt(j * MAX_GRID_COUNT - 16 + m_iXpos, i * MAX_GRID_COUNT - 16 + m_iYpos, 32, 32, &memdc, 0, 0, SRCCOPY);
+                }
+                else
+                {
+                    memdc.SelectObject(&bmpWhite);
+                    pDC->BitBlt(j * MAX_GRID_COUNT - 16 + m_iXpos, i * MAX_GRID_COUNT - 16 + m_iYpos, 32, 32, &memdc, 0, 0, SRCCOPY);
+                }
+            }
+        }
+    }
+
+    bmpBlack.DeleteObject();
+    ReleaseDC(&memdc);
 }
 
 //当用户拖动最小化窗口时系统调用此函数取得光标
@@ -161,9 +199,9 @@ void CGoBangDlg::drawCheckerBoard(UINT uiRow, UINT uiCol)
 {
     CDC * pDC = GetDC();
     CFont fontSet;
-    fontSet.CreateFont(120, 0, 0, 0, 700, FALSE, FALSE, 0, ANSI_CHARSET
-                       , OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY
-                       , DEFAULT_PITCH | FF_SWISS, _T("华文行楷"));
+    fontSet.CreateFont(120, 0, 0, 0, 700, FALSE, FALSE, 0, ANSI_CHARSET,
+                       OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, DEFAULT_QUALITY,
+                       DEFAULT_PITCH | FF_SWISS, _T("华文行楷"));
     pDC->SelectObject(&fontSet);
 
     CRect rect;
@@ -177,7 +215,9 @@ void CGoBangDlg::drawCheckerBoard(UINT uiRow, UINT uiCol)
     //pDC->TextOutW(715, 260, _T("子"));
     //pDC->TextOutW(715, 420, _T("棋"));
     int x = (rect.Width() - MAX_GRID_COUNT * uiCol) / 2 + 20;  //居中
+    m_iXpos = x;
     int y = 40;
+    m_iYpos = y;
     int iWidth = (uiRow - 1) * MAX_GRID_COUNT + x;
     for (UINT i = 0; i < uiRow; i++)
     {
@@ -206,4 +246,90 @@ void CGoBangDlg::drawCheckerBoard(UINT uiRow, UINT uiCol)
     m = x + 11 * MAX_GRID_COUNT;
     n = y + 11 * MAX_GRID_COUNT;
     pDC->Ellipse(m - RADIUS, n - RADIUS, m + RADIUS, n + RADIUS);
+}
+
+
+void CGoBangDlg::OnBnClickedBtnStart()
+{
+    if (nullptr != m_pGobang)
+    {
+        MessageBox(_T("游戏进行中，无法重新开始！"), _T("警告"), MB_OK | MB_ICONWARNING);
+        return;
+    }
+
+    m_pGobang = new CGoBangImpl();
+    if (nullptr == m_pGobang)
+    {
+        MessageBox(_T("开始游戏失败！"), _T("错误"), MB_OK | MB_ICONERROR);
+        return;
+    }
+    m_pGobang->init(m_iXpos, m_iYpos, MAX_GRID_COUNT);
+}
+
+
+void CGoBangDlg::OnLButtonDown(UINT nFlags, CPoint point)
+{
+    if (nullptr == m_pGobang)
+    {
+        CDialogEx::OnLButtonDown(nFlags, point);
+        return;
+    }
+
+    static bool m_blBlack = false;
+
+    const auto type = m_blBlack ? GOBANG_PIECE_BLACK : GOBANG_PIECE_WHITE;
+    if (!m_pGobang->pieceDown(point.x, point.y, type))
+        return;
+
+    SendMessage(WM_PAINT, 0, 0);
+    if (m_pGobang->checkGameOver(point.x, point.y, type))
+    {
+        m_pGobang->uninit();
+
+        CString strTemp = m_blBlack ? _T("黑方赢！") : _T("白方赢!");
+        strTemp += _T("是否继续？");
+        int iChoice = MessageBox(strTemp, _T("提示"), MB_YESNO | MB_ICONQUESTION);
+        if (iChoice == IDNO)
+        {
+            delete m_pGobang;
+            m_pGobang = nullptr;
+            exit(0);
+        }
+
+        m_pGobang->init(m_iXpos, m_iYpos, MAX_GRID_COUNT);
+    }
+    else if (m_pGobang->checkGameStalemate())
+    {
+        m_pGobang->uninit();
+
+        CString strTemp = _T("和棋，是否继续？");
+        int iChoice = MessageBox(strTemp, _T("提示"), MB_YESNO | MB_ICONQUESTION);
+        if (iChoice == IDNO)
+        {
+            delete m_pGobang;
+            m_pGobang = nullptr;
+            exit(0);
+        }
+
+        m_pGobang->init(m_iXpos, m_iYpos, MAX_GRID_COUNT);
+    }
+
+    m_blBlack = !m_blBlack;
+
+    Invalidate();
+
+    CDialogEx::OnLButtonDown(nFlags, point);
+}
+
+
+void CGoBangDlg::OnBnClickedBtnExitGame()
+{
+    if (nullptr != m_pGobang)
+    {
+        m_pGobang->uninit();
+        delete m_pGobang;
+        m_pGobang = nullptr;
+    }
+
+    CDialog::OnCancel();
 }
