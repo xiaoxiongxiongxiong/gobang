@@ -1,5 +1,5 @@
 ﻿#include "GoBangImpl.h"
-#include "libos.h"
+#include "os_log.h"
 #include <string.h>
 
 bool CGoBangImpl::init(const int x, const int y, const int grid_size)
